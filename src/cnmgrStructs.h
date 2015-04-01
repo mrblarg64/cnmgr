@@ -41,9 +41,9 @@ struct cnmgrCameraNode
 	float position[3];
 	float rotation[4][4];
 	float projection[4][4];
-	GLdouble fov;
-	GLdouble zNear;
-	GLdouble zFar;
+	float fov;
+	float zNear;
+	float zFar;
 	void *parent;
 	int nextType;
 	void *next;

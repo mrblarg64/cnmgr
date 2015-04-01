@@ -142,15 +142,12 @@ void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 	void *current;
 	int currentType;
 	int notLoopedBackToCamera=1;
+	float tanFOV;
 
-	//its eulers in gradians.... DEAL WITH IT!!!!!
-	//pitch
-	//(*camera)->rotation[0]=fmod(((*camera)->rotation[0]),400);
-	//roll
-	//(*camera)->rotation[1]=fmod(((*camera)->rotation[1]),400);
-	//yaw
-	//(*camera)->rotation[2]=fmod(((*camera)->rotation[2]),400);
-	//end view code
+	tanFOV=tan((((*camera)->fov)/360.0f)*(M_PI*2.0f));
+	//(*camera)->projection={{1.0f/tanFOV,0.0f,0.0f,0.0f},{0.0f,((float)height/(float)width)/tanFOV,0.0f,0.0f},{0.0f,0.0f,(zFar+zNear)/(zFar-zNear),1.0f},{0.0f,0.0f,-2.0f*zFar*zNear/(zFar-zNear),0.0f}};
+	//memcpy(&(*camera)->projection,
+
 	if ((*camera)->next==NULL)
 	{
 		return;
@@ -162,8 +159,7 @@ void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 		switch (currentType)
 		{
 			case CNMGR_NODE_TYPE_MESH:
-				//dem matrix code goez heere
-				cnmgrMeshNodeGenerateUberMatrix((struct cnmgrMeshNode*)current);
+				cnmgrMeshNodeGenerateUberMatrix((struct cnmgrMeshNode*)current,camera);
 				glUseProgram(((struct cnmgrMeshNode*)current)->shaderProgram->program);
 				glBindVertexArray(((struct cnmgrMeshNode*)current)->vertexArray);
 
@@ -254,20 +250,34 @@ cnmgrBufferVertexArrayMesh(int type,struct cnmgrMeshNode *mesh,int floatsPerVert
 	return;
 }
 
-cnmgrMatrixMultiply4x4(float *matrixOne,float *matrixTwo)
+cnmgrMatrixMultiply4x4(float **matrixOne,float **matrixTwo,float **outputMatrix)
 {
 	int notDone=1;
+	int x=0;
+	int y=0;
 
-	printf("CNMGR - cnmgrMatrixMultiply4x4 - This function doesnt do anything right now\n");
-	//while (notDone)
-	//{
-		//a;
-	//}
+	//printf("CNMGR - cnmgrMatrixMultiply4x4 - This function doesnt do anything right now\n");
+	while (notDone)
+	{
+		outputMatrix[y][x] = matrixOne[y][0]*matrixTwo[0][x] + matrixOne[y][1]*matrixTwo[1][x] + matrixOne[y][2]*matrixTwo[2][x] + matrixOne[y][3]*matrixTwo[3][x];
+		x++;
+		if (x==4)
+		{
+			x=0;
+			y++;
+			if (y==4)
+			{
+				notDone=0;
+			}
+		}
+	}
 }
 
-cnmgrMeshNodeGenerateUberMatrix(struct cnmgrMeshNode *mesh)
+cnmgrMeshNodeGenerateUberMatrix(struct cnmgrMeshNode *mesh,struct cnmgrCameraNode **camera)
 {
 	printf("CNMGR - cnmgrMeshNodeGenerateUberMatrix - This function doesnt do anything right now\n");
+
+	
 }
 
 cnmgrMeshNodeSetDefaultValues(struct cnmgrMeshNode *mesh)
