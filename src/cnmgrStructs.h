@@ -13,6 +13,7 @@ struct cnmgrGLShaderProgram
 
 struct cnmgrGLUniform
 {
+	int cnmgrInternalType;
 	int type;
 	void *data;
 	GLuint uniform;

@@ -1,3 +1,7 @@
+typedef float cnmgrMatrix4x4[4][4];
+
+#define CNMGR_INTERNAL_TYPE_UBERMATRIX 1
+
 #define CNMGR_NODE_TYPE_CAMERA 1
 #define CNMGR_NODE_TYPE_MESH 2
 

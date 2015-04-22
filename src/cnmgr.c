@@ -5,8 +5,18 @@
 #include <string.h>
 #include <math.h>
 
-int defaultProgramCreated=0;
-int defaultVertexShaderCreated=0;
+GLuint cnmgrDefaultVertShader;
+GLuint cnmgrDefaultFragShader;
+
+int cnmgrInit()
+{
+	printf("cnmgr starting up...\n");
+	printf("compiling default shaders...");
+	printf("THE DEFAULT SHADERS HAVE NOT BEEN IMPLEMENTED YET, COMPILING TEMPORARY SHADERS FROM LOCAL DIRECTORY");
+	cnmgrCreateVertexShaderFromFile(&cnmgrDefaultVertShader,"vshader");
+	cnmgrCreateFragShaderFromFile(&cnmgrDefaultFragShader,"fshader");
+	printf("done!\n");
+}
 
 int cnmgrCreateFragShaderFromFile(GLuint *fshader,char *shaderLocation)
 {
@@ -48,10 +58,10 @@ int cnmgrCreateFragShaderFromFile(GLuint *fshader,char *shaderLocation)
 	return 0;
 }
 
-void printShtuuuf()
-{
-	printf("%s\n",cnmgrDefaultVertexShader);
-}
+//void printShtuuuf()
+//{
+//	printf("%s\n",cnmgrDefaultVertexShader);
+//}
 
 int cnmgrCreateVertexShaderFromFile(GLuint *vshader,char *shaderLocation)
 {
@@ -93,13 +103,46 @@ int cnmgrCreateVertexShaderFromFile(GLuint *vshader,char *shaderLocation)
 	return 0;
 }
 
+void cnmgrSetupGLUniform(struct cnmgrGLShaderProgram *program,int uniformNumber,char *name,int type,int internalType)
+{
+	//Greater than or equal too because off by one for arrays
+	if (uniformNumber >= program->uniformAmount)
+	{
+		printf("CNMGR - cnmgrSetupGLUniform - Programmer attempted to modify nonexistant GL uniform, aborting...\n");
+		return;
+	}
+	((*program).uniforms[uniformNumber]).name=malloc(strlen(name)+1);
+	memcpy(((*program).uniforms[uniformNumber]).name,name,strlen(name)+1);
+	((*program).uniforms[uniformNumber]).uniform=glGetUniformLocation(program->program,name);
+	((*program).uniforms[uniformNumber]).type=type;
+	((*program).uniforms[uniformNumber]).cnmgrInternalType=internalType;
+}
+
+void cnmgrSetupGLUniformCustom(struct cnmgrGLShaderProgram *program,int uniformNumber,char *name,int type,void *dataPointer)
+{
+	//Greater than or equal too because off by one for arrays
+	if (uniformNumber >= program->uniformAmount)
+	{
+		printf("CNMGR - cnmgrSetupGLUniformCustom - Programmer attempted to modify nonexistant GL uniform, aborting...\n");
+		return;
+	}
+	((*program).uniforms[uniformNumber]).name=malloc(strlen(name)+1);
+	memcpy(((*program).uniforms[uniformNumber]).name,name,strlen(name)+1);
+	((*program).uniforms[uniformNumber]).uniform=glGetUniformLocation(program->program,name);
+	((*program).uniforms[uniformNumber]).type=type;
+	((*program).uniforms[uniformNumber]).data=dataPointer;
+	((*program).uniforms[uniformNumber]).cnmgrInternalType=1;
+}
+
 void cnmgrCreateGLProgramFromFragmentShader(struct cnmgrGLShaderProgram *program,GLuint *fshader,int uniformAmount)
 {
-	//program->program=glCreateProgram();
-	//glAttachShader(program->program,*fshader);
-	//glAttachShader(program->program,*vshader);
-	//glLinkProgram(program->program);
-	//program->uniforms=malloc(sizeof(struct cnmgrGLUniform)*(1+uniformAmount));
+	program->program=glCreateProgram();
+	glAttachShader(program->program,*fshader);
+	glAttachShader(program->program,cnmgrDefaultVertShader);
+	glLinkProgram(program->program);
+	program->uniforms=malloc(sizeof(struct cnmgrGLUniform)*(1+uniformAmount));
+	program->uniformAmount=uniformAmount+1;
+	cnmgrSetupGLUniform(program,0,"uberMatrix",CNMGR_GL_UNIFORM_MATRIX_4FV,CNMGR_INTERNAL_TYPE_UBERMATRIX);
 }
 
 void cnmgrCreateGLProgramCustom(struct cnmgrGLShaderProgram *program,GLuint *fshader,GLuint *vshader,GLuint *gshader,int uniformAmount)
@@ -120,34 +163,28 @@ void cnmgrCreateGLProgramCustom(struct cnmgrGLShaderProgram *program,GLuint *fsh
 	}
 }
 
-void cnmgrSetupGLUniform(struct cnmgrGLShaderProgram *program,int uniformNumber,char *name,int type)
-{
-	//Greater than or equal too because off by one for arrays
-	if (uniformNumber >= program->uniformAmount)
-	{
-		printf("CNMGR - cnmgrSetupUniform - Programmer attempted to modify nonexistant GL uniform, aborting...\n");
-		return;
-	}
-	((*program).uniforms[uniformNumber]).name=malloc(strlen(name)+1);
-	memcpy(((*program).uniforms[uniformNumber]).name,name,strlen(name)+1);
-	((*program).uniforms[uniformNumber]).uniform=glGetUniformLocation(program->program,name);
-	((*program).uniforms[uniformNumber]).type=type;
-	//never go full retard...
-	//dont mess with this, im taking a pointer to the data in the functions input, there is no need to malloc space, that should be handled by whoever calls this function
-	//((*program).uniforms[uniformNumber]).data=data;
-}
-
 void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 {
 	void *current;
 	int currentType;
 	int notLoopedBackToCamera=1;
 	float tanFOV;
+	cnmgrMatrix4x4 uberMatrix;
+	int currentUniform;
 
+//setup projection matrix
 	tanFOV=tan((((*camera)->fov)/360.0f)*(M_PI*2.0f));
+	memset(&(*camera)->projection,0,sizeof(cnmgrMatrix4x4));
+	(*camera)->projection[0][0]=1.0f/tanFOV;
+	(*camera)->projection[1][1]=((float)height/(float)width)/tanFOV;
+	(*camera)->projection[2][2]=((*camera)->zFar+(*camera)->zNear)/((*camera)->zFar-(*camera)->zNear);
+	(*camera)->projection[2][3]=1.0f;
+	(*camera)->projection[3][2]=-2.0f*(*camera)->zFar*(*camera)->zNear/((*camera)->zFar-(*camera)->zNear);
+	//projection={{1.0f/tanFOV,0.0f,0.0f,0.0f},{0.0f,((float)height/(float)width)/tanFOV,0.0f,0.0f},{0.0f,0.0f,(zFar+zNear)/(zFar-zNear),1.0f},{0.0f,0.0f,-2.0f*zFar*zNear/(zFar-zNear),0.0f}};
 	//(*camera)->projection={{1.0f/tanFOV,0.0f,0.0f,0.0f},{0.0f,((float)height/(float)width)/tanFOV,0.0f,0.0f},{0.0f,0.0f,(zFar+zNear)/(zFar-zNear),1.0f},{0.0f,0.0f,-2.0f*zFar*zNear/(zFar-zNear),0.0f}};
 	//memcpy(&(*camera)->projection,
 
+//check if there is anything to draw
 	if ((*camera)->next==NULL)
 	{
 		return;
@@ -159,11 +196,86 @@ void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 		switch (currentType)
 		{
 			case CNMGR_NODE_TYPE_MESH:
-				cnmgrMeshNodeGenerateUberMatrix((struct cnmgrMeshNode*)current,camera);
+				cnmgrMeshNodeGenerateUberMatrix((struct cnmgrMeshNode*)current,camera,&uberMatrix);
 				glUseProgram(((struct cnmgrMeshNode*)current)->shaderProgram->program);
+				currentUniform=0;
+				while (currentUniform!=((struct cnmgrMeshNode*)current)->shaderProgram->uniformAmount)
+				{
+					switch (((struct cnmgrMeshNode*)current)->shaderProgram->uniforms[currentUniform].type)
+					{
+						case CNMGR_GL_UNIFORM_1F:
+							break;
+						case CNMGR_GL_UNIFORM_2F:
+							break;
+						case CNMGR_GL_UNIFORM_3F:
+							break;
+						case CNMGR_GL_UNIFORM_4F:
+							break;
+						case CNMGR_GL_UNIFORM_1I:
+							break;
+						case CNMGR_GL_UNIFORM_2I:
+							break;
+						case CNMGR_GL_UNIFORM_3I:
+							break;
+						case CNMGR_GL_UNIFORM_4I:
+							break;
+						case CNMGR_GL_UNIFORM_1UI:
+							break;
+						case CNMGR_GL_UNIFORM_2UI:
+							break;
+						case CNMGR_GL_UNIFORM_3UI:
+							break;
+						case CNMGR_GL_UNIFORM_4UI:
+							break;
+						case CNMGR_GL_UNIFORM_1FV:
+							break;
+						case CNMGR_GL_UNIFORM_2FV:
+							break;
+						case CNMGR_GL_UNIFORM_3FV:
+							break;
+						case CNMGR_GL_UNIFORM_4FV:
+							break;
+						case CNMGR_GL_UNIFORM_1IV:
+							break;
+						case CNMGR_GL_UNIFORM_2IV:
+							break;
+						case CNMGR_GL_UNIFORM_3IV:
+							break;
+						case CNMGR_GL_UNIFORM_4IV:
+							break;
+						case CNMGR_GL_UNIFORM_1UIV:
+							break;
+						case CNMGR_GL_UNIFORM_2UIV:
+							break;
+						case CNMGR_GL_UNIFORM_3UIV:
+							break;
+						case CNMGR_GL_UNIFORM_4UIV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_2FV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_3FV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_4FV:
+							glUniformMatrix4fv(((struct cnmgrMeshNode*)current)->shaderProgram->uniforms[currentUniform].uniform,1,GL_FALSE,uberMatrix);
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_2X3FV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_3X2FV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_2X4FV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_4X2FV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_3X4FV:
+							break;
+						case CNMGR_GL_UNIFORM_MATRIX_4X3FV:
+							break;
+					}
+					currentUniform++;
+				}
 				glBindVertexArray(((struct cnmgrMeshNode*)current)->vertexArray);
 
-				//glDrawArrays(((struct cnmgrMeshNode*)current)->drawMode,0,
+				glDrawArrays(((struct cnmgrMeshNode*)current)->drawMode,0,3);
 
 				currentType=((struct cnmgrMeshNode*)current)->nextType;
 				current=((struct cnmgrMeshNode*)current)->next;
@@ -176,7 +288,7 @@ void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 	}
 }
 
-void cnmgrAddCameraSceneNode(struct cnmgrCameraNode **camera,GLdouble fov,GLdouble zNear,GLdouble zFar)
+void cnmgrAddCameraSceneNode(struct cnmgrCameraNode **camera,float fov,float zNear,float zFar)
 {
 	(*camera)=malloc(sizeof(struct cnmgrCameraNode));
 	memset(*camera,0,sizeof(struct cnmgrCameraNode));
@@ -250,7 +362,7 @@ cnmgrBufferVertexArrayMesh(int type,struct cnmgrMeshNode *mesh,int floatsPerVert
 	return;
 }
 
-cnmgrMatrixMultiply4x4(float **matrixOne,float **matrixTwo,float **outputMatrix)
+cnmgrMatrixMultiply4x4(float matrixOne[4][4],float matrixTwo[4][4],float outputMatrix[4][4])
 {
 	int notDone=1;
 	int x=0;
@@ -273,11 +385,26 @@ cnmgrMatrixMultiply4x4(float **matrixOne,float **matrixTwo,float **outputMatrix)
 	}
 }
 
-cnmgrMeshNodeGenerateUberMatrix(struct cnmgrMeshNode *mesh,struct cnmgrCameraNode **camera)
+cnmgrMeshNodeGenerateUberMatrix(struct cnmgrMeshNode *mesh,struct cnmgrCameraNode **camera,cnmgrMatrix4x4 *uberMatrix)
 {
-	printf("CNMGR - cnmgrMeshNodeGenerateUberMatrix - This function doesnt do anything right now\n");
+	cnmgrMatrix4x4 translation;
+	cnmgrMatrix4x4 current;
 
-	
+	//not the fastest way of generating the translation/identity matrix
+	translation[0][0]=1.0f;
+	translation[1][1]=1.0f;
+	translation[2][2]=1.0f;
+	translation[3][3]=1.0f;
+	//x
+	translation[3][0]=mesh->position[0];
+	//y
+	translation[3][1]=mesh->position[1];
+	//z
+	translation[3][2]=mesh->position[2];
+
+	cnmgrMatrixMultiply4x4(translation,(*camera)->projection,*uberMatrix);
+
+	//memcpy(uberMatrix,&current,sizeof(cnmgrMatrix4x4));
 }
 
 cnmgrMeshNodeSetDefaultValues(struct cnmgrMeshNode *mesh)
