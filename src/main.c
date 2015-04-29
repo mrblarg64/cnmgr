@@ -10,8 +10,6 @@ struct cnmgrCameraNode *camera;
 struct cnmgrGLShaderProgram tempProgram;
 struct cnmgrMeshNode *myTriangle;
 
-//temp make test
-
 openWindow()
 {
 	glfwInit();
@@ -35,23 +33,26 @@ openWindow()
 	
 	cnmgrInit();
 
-	cnmgrCreateFragShaderFromFile(&fshader,"fshader");
+	//cnmgrCreateFragShaderFromFile(&fshader,"fshader");
 	//cnmgrCreateVertexShaderFromFile(&vshader,"vshader");
-	cnmgrCreateGLProgramFromFragmentShader(&tempProgram,&fshader,0);
+	//cnmgrCreateGLProgramFromFragmentShader(&tempProgram,&fshader,0);
 
 	cnmgrAddCameraSceneNode(&camera,65,0.01f,100);
 	myTriangle=cnmgrAddMeshNodeFromNonIndexedFloatArray(&camera,0,NULL,0,3,9,tempTriangle);
-	myTriangle->shaderProgram=&tempProgram;
+	//myTriangle->shaderProgram=&tempProgram;
 }
 
 loopThing()
 {
 	int width;
 	int height;
-	float z=20;
+	double time;//lol
+	float fps;
+	
 
 	while (!glfwWindowShouldClose(window))
 	{
+		time=glfwGetTime();
 		glfwGetWindowSize(window,&width,&height);
 		glViewport(0,0,width,height);
 		glClearColor(0,1,0,0);
@@ -59,45 +60,42 @@ loopThing()
 
 		if (glfwGetKey(window,GLFW_KEY_W)==GLFW_PRESS)
 		{
-			glClearColor(1,0,0,0);
-			glClear(GL_COLOR_BUFFER_BIT);
 			myTriangle->position[1]=myTriangle->position[1]+0.1f;
 		}
 
 		if (glfwGetKey(window,GLFW_KEY_S)==GLFW_PRESS)
 		{
-			glClearColor(1,0,0,0);
-			glClear(GL_COLOR_BUFFER_BIT);
 			myTriangle->position[1]=myTriangle->position[1]-0.1f;
 		}
 		if (glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS)
 		{
-			glClearColor(1,0,0,0);
-			glClear(GL_COLOR_BUFFER_BIT);
 			myTriangle->position[0]=myTriangle->position[0]-0.1f;
 		}
 		if (glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS)
 		{
-			glClearColor(1,0,0,0);
-			glClear(GL_COLOR_BUFFER_BIT);
 			myTriangle->position[0]=myTriangle->position[0]+0.1f;
 		}
 		if (glfwGetKey(window,GLFW_KEY_LEFT_CONTROL)==GLFW_PRESS)
 		{
-			glClearColor(1,0,0,0);
-			glClear(GL_COLOR_BUFFER_BIT);
 			myTriangle->position[2]=myTriangle->position[2]-0.1f;
 		}
 		if (glfwGetKey(window,GLFW_KEY_SPACE)==GLFW_PRESS)
 		{
-			glClearColor(1,0,0,0);
-			glClear(GL_COLOR_BUFFER_BIT);
 			myTriangle->position[2]=myTriangle->position[2]+0.1f;
 		}
+
+		if (glfwGetKey(window,GLFW_KEY_F)==GLFW_PRESS)
+		{
+			printf("%f fps\n",fps);
+		}
+
+
 		cnmgrRenderScene(&camera,width,height);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		fps=1/(glfwGetTime()-time);
 	}
 }
 

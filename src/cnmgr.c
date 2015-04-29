@@ -7,25 +7,49 @@
 
 GLuint cnmgrDefaultVertShader;
 GLuint cnmgrDefaultFragShader;
+struct cnmgrGLShaderProgram cnmgrDefaultShaderProgram;
 
 int cnmgrInit()
 {
 	printf("cnmgr starting up...\n");
 	printf("compiling default shaders...");
-	printf("THE DEFAULT SHADERS HAVE NOT BEEN IMPLEMENTED YET, COMPILING TEMPORARY SHADERS FROM LOCAL DIRECTORY");
-	cnmgrCreateVertexShaderFromFile(&cnmgrDefaultVertShader,"vshader");
-	cnmgrCreateFragShaderFromFile(&cnmgrDefaultFragShader,"fshader");
+	cnmgrCreateVertexShaderFromBuffer(&cnmgrDefaultVertShader,cnmgrBuiltInVertexShader);
+	cnmgrCreateFragShaderFromBuffer(&cnmgrDefaultFragShader,cnmgrBuiltInFragShader);
 	printf("done!\n");
+	printf("creating default program...");
+	cnmgrCreateGLProgramFromFragmentShader(&cnmgrDefaultShaderProgram,&cnmgrDefaultFragShader,0);
+	printf("done!\n");
+	printf("startup complete!\n");
 }
 
+int cnmgrCreateFragShaderFromBuffer(GLuint *fshader,char *buffer)
+{
+	GLint logLength=0;
+	GLchar *compilerLog;
+	GLsizei unknownVariable=0;
+
+	*fshader=glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(*fshader,1,&buffer,NULL);
+	glCompileShader(*fshader);
+	glGetShaderiv(*fshader,GL_INFO_LOG_LENGTH,&logLength);
+	if (logLength>1)
+	{
+		printf("CNMGR - cnmgrCreateFragShaderFromFile - Shader Compile failure, Dumping log...\n");
+		compilerLog=malloc(logLength);
+		glGetInfoLogARB(*fshader,logLength,&unknownVariable,compilerLog);
+		printf("%s\n",compilerLog);
+		free(compilerLog);
+		printf("CNMGR - cnmgrCreateFragShaderFromFile - Log Dump Complete\n");
+		return 1;
+	}
+	return 0;
+}
 int cnmgrCreateFragShaderFromFile(GLuint *fshader,char *shaderLocation)
 {
 	char *shaderSource;
 	FILE *fp=NULL;
 	unsigned int size;
-	GLint logLength=0;
-	GLchar *compilerLog;
-	GLsizei unknownVariable=0;
+	int retval;
 
 	fp=fopen(shaderLocation,"r");
 	if (fp==NULL)
@@ -40,37 +64,39 @@ int cnmgrCreateFragShaderFromFile(GLuint *fshader,char *shaderLocation)
 	fread(shaderSource,size,1,fp);
 	shaderSource[size]='\0';
 	fclose(fp);
-	*fshader=glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(*fshader,1,&shaderSource,NULL);
-	glCompileShader(*fshader);
+	retval=cnmgrCreateFragShaderFromBuffer(fshader,shaderSource);
 	free(shaderSource);
-	glGetShaderiv(*fshader,GL_INFO_LOG_LENGTH,&logLength);
-	if (logLength>1)
-	{
-		printf("CNMGR - cnmgrCreateFragShaderFromFile - Shader Compile failure, Dumping log...\n");
-		compilerLog=malloc(logLength);
-		glGetInfoLogARB(*fshader,logLength,&unknownVariable,compilerLog);
-		printf("%s\n",compilerLog);
-		free(compilerLog);
-		printf("CNMGR - cnmgrCreateFragShaderFromFile - Log Dump Complete\n");
-		return 1;
-	}
-	return 0;
+	return retval;
 }
 
-//void printShtuuuf()
-//{
-//	printf("%s\n",cnmgrDefaultVertexShader);
-//}
+int cnmgrCreateVertexShaderFromBuffer(GLuint *vshader,char *buffer)
+{
+	GLint logLength=0;
+	GLchar *compilerLog;
+	GLsizei unknownVariable=0;
+
+	*vshader=glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(*vshader,1,&buffer,NULL);
+	glCompileShader(*vshader);
+	glGetShaderiv(*vshader,GL_INFO_LOG_LENGTH,&logLength);
+	if (logLength>1)
+	{
+		printf("CNMGR - cnmgrCreateVertexShaderFromFile - Shader Compile failure, Dumping log...\n");
+		compilerLog=malloc(logLength);
+		glGetInfoLogARB(*vshader,logLength,&unknownVariable,compilerLog);
+		printf("%s\n",compilerLog);
+		free(compilerLog);
+		printf("CNMGR - cnmgrCreateVertexShaderFromFile - Log Dump Complete\n");
+		return 1;
+	}
+}
 
 int cnmgrCreateVertexShaderFromFile(GLuint *vshader,char *shaderLocation)
 {
 	char *shaderSource;
 	FILE *fp=NULL;
 	unsigned int size;
-	GLint logLength=0;
-	GLchar *compilerLog;
-	GLsizei unknownVariable=0;
+	int retval;
 
 	fp=fopen(shaderLocation,"r");
 	if (fp==NULL)
@@ -85,22 +111,9 @@ int cnmgrCreateVertexShaderFromFile(GLuint *vshader,char *shaderLocation)
 	fread(shaderSource,size,1,fp);
 	shaderSource[size]='\0';
 	fclose(fp);
-	*vshader=glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(*vshader,1,&shaderSource,NULL);
-	glCompileShader(*vshader);
+	retval=cnmgrCreateVertexShaderFromBuffer(vshader,shaderSource);
 	free(shaderSource);
-	glGetShaderiv(*vshader,GL_INFO_LOG_LENGTH,&logLength);
-	if (logLength>1)
-	{
-		printf("CNMGR - cnmgrCreateVertexShaderFromFile - Shader Compile failure, Dumping log...\n");
-		compilerLog=malloc(logLength);
-		glGetInfoLogARB(*vshader,logLength,&unknownVariable,compilerLog);
-		printf("%s\n",compilerLog);
-		free(compilerLog);
-		printf("CNMGR - cnmgrCreateVertexShaderFromFile - Log Dump Complete\n");
-		return 1;
-	}
-	return 0;
+	return retval;
 }
 
 void cnmgrSetupGLUniform(struct cnmgrGLShaderProgram *program,int uniformNumber,char *name,int type,int internalType)
@@ -173,13 +186,13 @@ void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 	int currentUniform;
 
 //setup projection matrix
-	tanFOV=tan((((*camera)->fov)/360.0f)*(M_PI*2.0f));
+	tanFOV=tanf((((*camera)->fov)/360.0f)*(M_PI*2.0f));
 	memset(&(*camera)->projection,0,sizeof(cnmgrMatrix4x4));
 	(*camera)->projection[0][0]=1.0f/tanFOV;
-	(*camera)->projection[1][1]=((float)height/(float)width)/tanFOV;
+	(*camera)->projection[1][1]=((float)width/(float)height)/tanFOV;
 	(*camera)->projection[2][2]=((*camera)->zFar+(*camera)->zNear)/((*camera)->zFar-(*camera)->zNear);
 	(*camera)->projection[2][3]=1.0f;
-	(*camera)->projection[3][2]=-2.0f*(*camera)->zFar*(*camera)->zNear/((*camera)->zFar-(*camera)->zNear);
+	(*camera)->projection[3][2]=(-2.0f*(*camera)->zFar*(*camera)->zNear)/((*camera)->zFar-(*camera)->zNear);
 	//projection={{1.0f/tanFOV,0.0f,0.0f,0.0f},{0.0f,((float)height/(float)width)/tanFOV,0.0f,0.0f},{0.0f,0.0f,(zFar+zNear)/(zFar-zNear),1.0f},{0.0f,0.0f,-2.0f*zFar*zNear/(zFar-zNear),0.0f}};
 	//(*camera)->projection={{1.0f/tanFOV,0.0f,0.0f,0.0f},{0.0f,((float)height/(float)width)/tanFOV,0.0f,0.0f},{0.0f,0.0f,(zFar+zNear)/(zFar-zNear),1.0f},{0.0f,0.0f,-2.0f*zFar*zNear/(zFar-zNear),0.0f}};
 	//memcpy(&(*camera)->projection,
@@ -256,7 +269,10 @@ void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 						case CNMGR_GL_UNIFORM_MATRIX_3FV:
 							break;
 						case CNMGR_GL_UNIFORM_MATRIX_4FV:
-							glUniformMatrix4fv(((struct cnmgrMeshNode*)current)->shaderProgram->uniforms[currentUniform].uniform,1,GL_FALSE,uberMatrix);
+							if (CNMGR_INTERNAL_TYPE_UBERMATRIX==((struct cnmgrMeshNode*)current)->shaderProgram->uniforms[currentUniform].cnmgrInternalType)
+							{
+								glUniformMatrix4fv(((struct cnmgrMeshNode*)current)->shaderProgram->uniforms[currentUniform].uniform,1,GL_FALSE,uberMatrix);
+							}
 							break;
 						case CNMGR_GL_UNIFORM_MATRIX_2X3FV:
 							break;
@@ -275,7 +291,7 @@ void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height)
 				}
 				glBindVertexArray(((struct cnmgrMeshNode*)current)->vertexArray);
 
-				glDrawArrays(((struct cnmgrMeshNode*)current)->drawMode,0,3);
+				glDrawArrays(((struct cnmgrMeshNode*)current)->drawMode,0,((struct cnmgrMeshNode*)current)->vertAmount);
 
 				currentType=((struct cnmgrMeshNode*)current)->nextType;
 				current=((struct cnmgrMeshNode*)current)->next;
@@ -305,6 +321,7 @@ struct cnmgrMeshNode *cnmgrAddMeshNodeFromNonIndexedFloatArray(struct cnmgrCamer
 	cnmgrMeshNodeSetupPointers(mesh,camera,parent,parentType,id);
 	cnmgrBufferVertexArrayMesh(CNMGR_NON_INDEXED_FLOAT_ARRAY,mesh,floatsPerVertex,vertAmount,verts);
 	cnmgrMeshNodeSetDefaultValues(mesh);
+	mesh->vertAmount=vertAmount;
 	return mesh;
 }
 
@@ -368,7 +385,6 @@ cnmgrMatrixMultiply4x4(float matrixOne[4][4],float matrixTwo[4][4],float outputM
 	int x=0;
 	int y=0;
 
-	//printf("CNMGR - cnmgrMatrixMultiply4x4 - This function doesnt do anything right now\n");
 	while (notDone)
 	{
 		outputMatrix[y][x] = matrixOne[y][0]*matrixTwo[0][x] + matrixOne[y][1]*matrixTwo[1][x] + matrixOne[y][2]*matrixTwo[2][x] + matrixOne[y][3]*matrixTwo[3][x];
@@ -412,4 +428,5 @@ cnmgrMeshNodeSetDefaultValues(struct cnmgrMeshNode *mesh)
 	memset(&mesh->position,0,sizeof(mesh->position));
 	memset(&mesh->rotation,0,sizeof(mesh->rotation));
 	mesh->drawMode=GL_TRIANGLES;
+	mesh->shaderProgram=&cnmgrDefaultShaderProgram;
 }

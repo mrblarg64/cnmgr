@@ -24,6 +24,7 @@ struct cnmgrMeshNode
 {
 	float position[3];
 	float rotation[4][4];
+	int vertAmount;
 	GLuint vertexBuffer;
 	GLuint vertexArray;
 	struct cnmgrGLShaderProgram *shaderProgram;
