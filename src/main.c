@@ -86,7 +86,7 @@ loopThing()
 
 		if (glfwGetKey(window,GLFW_KEY_F)==GLFW_PRESS)
 		{
-			printf("%f fps\n",fps);
+			printf("%f pos\n",myTriangle->position[2]);
 		}
 
 

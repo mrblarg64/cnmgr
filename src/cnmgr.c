@@ -340,14 +340,18 @@ cnmgrMeshNodeSetupPointers(struct cnmgrMeshNode *mesh,struct cnmgrCameraNode **c
 	}
 	else
 	{
-		if ((*camera)->previousType==CNMGR_NODE_TYPE_MESH)
+		switch ((*camera)->previousType)
 		{
-			mesh->previous=(*camera)->previous;
-			mesh->previousType=(*camera)->previousType;
-			mesh->next=*camera;
-			mesh->nextType=CNMGR_NODE_TYPE_CAMERA;
-			((struct cnmgrMeshNode*)((*camera)->previous))->next=mesh;
-			((struct cnmgrMeshNode*)((*camera)->previous))->nextType=CNMGR_NODE_TYPE_MESH;
+			case CNMGR_NODE_TYPE_MESH:
+				mesh->previous=(*camera)->previous;
+				mesh->previousType=(*camera)->previousType;
+				mesh->next=*camera;
+				mesh->nextType=CNMGR_NODE_TYPE_CAMERA;
+				((struct cnmgrMeshNode*)((*camera)->previous))->next=mesh;
+				((struct cnmgrMeshNode*)((*camera)->previous))->nextType=CNMGR_NODE_TYPE_MESH;
+				(*camera)->previous=mesh;
+				(*camera)->previousType=CNMGR_NODE_TYPE_MESH;
+				break;
 		}
 	}
 	if (parent!=NULL)
