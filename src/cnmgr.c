@@ -391,6 +391,7 @@ cnmgrMatrixMultiply4x4(float matrixOne[4][4],float matrixTwo[4][4],float outputM
 
 	while (notDone)
 	{
+		//gcc will generate fuse-multiply-add instructions with -O2 and above, remember to -march=native !
 		outputMatrix[y][x] = matrixOne[y][0]*matrixTwo[0][x] + matrixOne[y][1]*matrixTwo[1][x] + matrixOne[y][2]*matrixTwo[2][x] + matrixOne[y][3]*matrixTwo[3][x];
 		x++;
 		if (x==4)
