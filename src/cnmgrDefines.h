@@ -1,3 +1,7 @@
+#ifndef CNMGR_DEFINES_H
+
+#define CNMGR_DEFINES_H
+
 typedef float cnmgrMatrix4x4[4][4];
 
 #define CNMGR_INTERNAL_TYPE_UBERMATRIX 1
@@ -40,3 +44,5 @@ typedef float cnmgrMatrix4x4[4][4];
 #define CNMGR_GL_UNIFORM_MATRIX_4X2FV 30
 #define CNMGR_GL_UNIFORM_MATRIX_3X4FV 31
 #define CNMGR_GL_UNIFORM_MATRIX_4X3FV 32
+
+#endif

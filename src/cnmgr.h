@@ -1,3 +1,7 @@
+#ifndef CNMGR_H
+
+#define CNMGR_H
+
 #include "cnmgrStructs.h"
 int cnmgrInit();
 int cnmgrCreateFragShaderFromFile(GLuint *fshader,char *shaderLocation);
@@ -8,3 +12,4 @@ void cnmgrSetupGLUniformCustom(struct cnmgrGLShaderProgram *program,int uniformN
 void cnmgrRenderScene(struct cnmgrCameraNode **camera,int width,int height);
 void cnmgrAddCameraSceneNode(struct cnmgrCameraNode **camera,float fov,float zNear,float zFar);
 struct cnmgrMeshNode *cnmgrAddMeshNodeFromNonIndexedFloatArray(struct cnmgrCameraNode **camera,int id,void *parent,int parentType,int floatsPerVertex,int vertAmount,float *verts);
+#endif

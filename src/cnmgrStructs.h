@@ -1,5 +1,9 @@
 #include <GL/gl.h>
 
+#ifndef CNMGR_STRUCTS_H
+
+#define CNMGR_STRUCTS_H
+
 #include "cnmgrDefines.h"
 
 //char cnmgrDefaultVshader[]="#version 330"
@@ -52,3 +56,4 @@ struct cnmgrCameraNode
 	int previousType;
 	void *previous;
 };
+#endif
