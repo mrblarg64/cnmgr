@@ -19,7 +19,7 @@ openWindow()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
-	window=glfwCreateWindow(640,480,"hello glfw-3",NULL,NULL);
+	window=glfwCreateWindow(1920,1080,"hello glfw-3",NULL,NULL);
 	//window=glfwCreateWindow(1366,768,"hello glfw-3",NULL,NULL);
 	glfwMakeContextCurrent(window);
 	//glfwEnable(GLFW_STICKY_KEYS);
@@ -38,7 +38,7 @@ openWindow()
 	//cnmgrCreateGLProgramFromFragmentShader(&tempProgram,&fshader,0);
 
 	cnmgrAddCameraSceneNode(&camera,65,0.01f,100);
-	myTriangle=cnmgrAddMeshNodeFromNonIndexedFloatArray(&camera,0,NULL,0,3,9,tempTriangle);
+	myTriangle=cnmgrAddMeshNodeFromNonIndexedFloatArray(&camera,0,NULL,0,3,3,tempTriangle);
 	//myTriangle->shaderProgram=&tempProgram;
 }
 

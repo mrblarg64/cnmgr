@@ -370,7 +370,7 @@ cnmgrBufferVertexArrayMesh(int type,struct cnmgrMeshNode *mesh,int floatsPerVert
 			glBindVertexArray(mesh->vertexArray);
 			glGenBuffers(1,&(mesh->vertexBuffer));
 			glBindBuffer(GL_ARRAY_BUFFER,mesh->vertexBuffer);
-			glBufferData(GL_ARRAY_BUFFER,sizeof(float)*vertAmount,data,GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER,sizeof(float)*vertAmount*floatsPerVertex,data,GL_STATIC_DRAW);
 			if (floatsPerVertex<1||floatsPerVertex>4)
 			{
 				printf("CNMGR - cnmgrBufferVertexArrayMesh - floatsPerVertex (for use with size in glVertexAttribPointer) must be between 1, 2, 3, or 4 programmer called %d continuing, expect problems\n",floatsPerVertex);
@@ -411,6 +411,8 @@ cnmgrMeshNodeGenerateUberMatrix(struct cnmgrMeshNode *mesh,struct cnmgrCameraNod
 	cnmgrMatrix4x4 translation;
 	cnmgrMatrix4x4 current;
 
+	//this fixes uninitilized memory bug
+	memset(translation,0,sizeof(cnmgrMatrix4x4));
 	//not the fastest way of generating the translation/identity matrix
 	translation[0][0]=1.0f;
 	translation[1][1]=1.0f;
